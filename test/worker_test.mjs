@@ -1,9 +1,44 @@
 //@format
+import { env } from "process";
+
 import test from "ava";
 import esmock from "esmock";
 
 import { messages } from "../src/api.mjs";
-import { validateConfig } from "../src/worker.mjs";
+import { execute, validateConfig } from "../src/worker.mjs";
+
+test("worker's immediate execution endpoint upon invalid message", async (t) => {
+  const message = {
+    version: "0.0.1",
+    type: "json-rpc",
+    method: "eth_getTransactionReceipt",
+    params: [
+      "0xed14c3386aea0c5b39ffea466997ff13606eaedf03fe7f431326531f35809d1d",
+    ],
+  };
+  const outcome = await execute(message);
+  t.falsy(outcome.commissioner);
+  t.truthy(outcome.error);
+  t.falsy(outcome.results);
+});
+
+test("worker's immediate execution endpoint", async (t) => {
+  const message = {
+    options: {
+      url: env.RPC_HTTP_HOST,
+    },
+    version: "0.0.1",
+    type: "json-rpc",
+    method: "eth_getTransactionReceipt",
+    params: [
+      "0xed14c3386aea0c5b39ffea466997ff13606eaedf03fe7f431326531f35809d1d",
+    ],
+  };
+  const outcome = await execute(message);
+  t.falsy(outcome.commissioner);
+  t.truthy(outcome.results);
+  t.falsy(outcome.error);
+});
 
 test("if run returns queue instance", async (t) => {
   const workerData = {

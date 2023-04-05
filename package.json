@@ -51,7 +51,7 @@
   "homepage": "https://github.com/neume-network/neume-network-extraction-worker#readme",
   "devDependencies": {
     "ava": "4.2.0",
-    "esmock": "1.7.5",
+    "esmock": "2.2.1",
     "eth-fun": "0.9.x",
     "expressively-mocked-fetch": "0.2.3",
     "husky": "7.0.4",

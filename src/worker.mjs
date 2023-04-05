@@ -20,47 +20,55 @@ export function panic(error, message) {
   );
   message.error = error.toString();
   if (message) {
-    parentPort.postMessage(message);
+    return message;
   } else {
-    // TODO: Need to get the context of where that error was thrown, e.g. can
-    // we get the task's message through `taskId` somehow? Otherwise,
-    // how useful is it to throw this error outside and which message schema
-    // should it be?
-    log("WARNING: Error isn't propagated outside of extration worker");
+    throw new Error(
+      "WARNING: Error isn't propagated outside of extration worker"
+    );
   }
 }
 
 let finished = 0;
 let errors = 0;
-export function messageHandler(queue) {
-  return async (message) => {
+export async function process(queue, message) {
+  try {
+    messages.validate(message);
+  } catch (error) {
+    return panic(error, message);
+  }
+
+  if (message.type === "exit") {
+    log(`Received exit signal; shutting down`);
+    exit(0);
+  } else {
+    let result;
     try {
-      messages.validate(message);
+      result = await queue.push(message);
+      if (result.error) {
+        errors++;
+      } else {
+        finished++;
+      }
+      log(`Success: ${finished} Errors: ${errors}`);
     } catch (error) {
+      errors++;
+      log(`Success: ${finished} Errors: ${errors}`);
       return panic(error, message);
     }
+    return result;
+  }
+}
 
-    if (message.type === "exit") {
-      log(`Received exit signal; shutting down`);
-      exit(0);
-    } else {
-      let result;
-      try {
-        result = await queue.push(message);
-        if (result.error) {
-          errors++;
-        } else {
-          finished++;
-        }
-        log(`Success: ${finished} Errors: ${errors}`);
-      } catch (error) {
-        errors++;
-        log(`Success: ${finished} Errors: ${errors}`);
-        return panic(error, message);
-      }
-
-      parentPort.postMessage(result);
+export function messageHandler(queue) {
+  return async (message) => {
+    const result = await process(queue, message);
+    if (!result) {
+      log(
+        "Result in messageHandler came back falsy and won't be sent back to the host process"
+      );
+      return;
     }
+    parentPort.postMessage(result);
   };
 }
 
@@ -73,6 +81,19 @@ export function validateConfig(config) {
     log(check.errors);
     throw new Error("Received invalid config");
   }
+}
+
+export async function execute(message, concurrency = 1) {
+  // NOTE: For legacy reasons, for every message posted to the worker, it
+  // requires a "commissioner" value, such that routing it in the
+  // `@attestate/crawler` is possible to its respective origin strategy. But
+  // messages passed into `execute()` don't need the property and so we're
+  // mocking it here for processing and remove it afterwards.
+  message.commissioner = "dummy value";
+  const queue = fastq.promise(messages.route, concurrency);
+  const result = await process(queue, message);
+  delete result.commissioner;
+  return result;
 }
 
 export function run() {

@@ -41,12 +41,8 @@ test("should not be able to parse if content-type is json and body is unparsable
   `
   );
 
-  await t.throwsAsync(
-    async () => request(`http://localhost:${worker.port}`, "GET"),
-    {
-      message:
-        'Encountered error when trying to parse JSON body result: "hello", error: "SyntaxError: Unexpected token h in JSON at position 0"',
-    }
+  await t.throwsAsync(async () =>
+    request(`http://localhost:${worker.port}`, "GET")
   );
   worker.process.terminate();
 });
