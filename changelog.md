@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.2
+
+- Add `async function execute(message, concurrency)` to allow usage of
+  extraction worker without events architecture
+
 ## 0.7.1
 
 - Pass `headers` in ipfs message to gateway
