@@ -1,7 +1,7 @@
 {
-  "name": "@neume-network/extraction-worker",
+  "name": "@attestate/extraction-worker",
   "version": "0.7.1",
-  "description": "The purpose of the neume-network/core Extraction Worker (short: \"EW\") is to parallelize retrieving distributed information from various data sources by abstracting away the complexity of scaling processes accross a distributed system such as e.g. multiple node.js Worker threads.",
+  "description": "A component that accepts JSON objects to execute simple or complex extraction maneuvres.",
   "main": "./src/worker.mjs",
   "ava": {
     "files": [
@@ -12,7 +12,7 @@
       "--no-warnings"
     ],
     "environmentVariables": {
-      "DEBUG": "neume-network-*",
+      "DEBUG": "@attestate*",
       "RPC_HTTP_HOST": "https://cloudflare-eth.com"
     },
     "require": [
@@ -31,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/neume-network/neume-network-extraction-worker.git"
+    "url": "git+https://github.com/attestate/extraction-worker.git"
   },
   "keywords": [
     "worker",
@@ -39,16 +39,14 @@
     "fetch",
     "queue",
     "batch",
-    "extraction",
-    "nfts",
-    "music"
+    "extraction"
   ],
   "author": "Tim Daubenschütz <tim@daubenschuetz.de> (https://timdaub.github.io/)",
   "license": "GPL-3.0-only",
   "bugs": {
-    "url": "https://github.com/neume-network/neume-network-extraction-worker/issues"
+    "url": "https://github.com/attestate/extraction-worker/issues"
   },
-  "homepage": "https://github.com/neume-network/neume-network-extraction-worker#readme",
+  "homepage": "https://github.com/attestate/extraction-worker#readme",
   "devDependencies": {
     "ava": "4.2.0",
     "esmock": "2.2.1",
