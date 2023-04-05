@@ -1,56 +1,115 @@
-# Extractor Worker API
+# @attestate/extraction-worker
 
-The purpose of the neume-network/extraction-worker (short: "EW") is to
-parallelize retrieving distributed information from various data sources by
-abstracting away the complexity of scaling processes accross a distributed
-system such as e.g. multiple node.js
-[`Worker`](https://nodejs.org/api/worker_threads.html) threads.
+The extraction-worker is a component that accepts JSON objects to execute
+simple or complex extraction maneuvres. Originally, the extraction worker was
+conceived as utility tool for `@neume-network/extraction-worker`, but it is
+frankly useful for any kind of task that requires downloading a bigger chunk of
+data from various endpoints.
+
+The extraction worker supports: JSON-RPC, GraphQL, HTTPS, Arweave and IPFS.
 
 ## Installation
 
 ```bash
-npm i @neume-network/extraction-worker
+npm i @attestate/extraction-worker
 npm i eth-fun --no-save # to install eth-fun as a peer dependency
 ```
 
-## Interface
+## Usage
 
-A single interface allows sending new jobs to the neume-network-core `Worker`.
-Using
-[`postMessage`](https://nodejs.org/api/worker_threads.html#workerpostmessagevalue-transferlist)
-and by sending a specific Extractor Worker JSON message object, within a
-reasonable timeframe, the worker will send back the retrieved record.
+If you're looking to extract a single message, use the `execute` function.
 
-## Versioning
+```js
+import { execute } from "@attestate/extraction-worker";
 
-The API uses [semantic versioning](https://semver.org/) to identify temporally
-different manifestations of the API.
+const message = {
+  version: "0.0.1",
+  type: "json-rpc",
+  method: "eth_getTransactionReceipt",
+  params: [
+    "0xed14c3386aea0c5b39ffea466997ff13606eaedf03fe7f431326531f35809d1d",
+  ],
+};
 
-### Status Of This Document
+const outcome = await execute(message);
 
-The goal is to keep this document up-to-date with the actual implementation of
-the Extractor Worker API. If you find this document out-of-date, please
-consider
-[contributing](https://github.com/neume-network/neume-network-core/blob/main/contributing.md).
+if (!outcome.results) {
+  console.error(outcome.error);
+  return;
+}
+console.log(outcome.results);
+```
 
-## Extractor Worker Flow
+Else, you can use the extraction worker to stream tasks. For that, you'll need
+to create a worker execution module
 
-The Extractor Worker JSON Message Object is sent via
-[`postMessage`](https://nodejs.org/api/worker_threads.html#workerpostmessagevalue-transferlist)
-to a `Worker` instance. An answer of this message can then be expected
-within a reasonable timeframe. The EW implements a minimal queue, which is why
-a weak prioritization of submitted tasks can be expected.
+worker_start.mjs
 
-Below is a sequence diagram of the entire flow:
+```js
+import "dotenv/config";
+import { Worker, isMainThread, workerData } from "worker_threads";
 
-<p align="center">
-  <img src="/assets/diagrams/extractorworkerflow.png" />
-</p>
+import logger from "./logger.mjs";
+import { run } from "@neume-network/extraction-worker";
 
-## JSON Message Object
+const log = logger("start");
+const module = {
+  defaults: {
+    workerData: {
+      queue: {
+        options: {
+          concurrent: 1,
+        },
+      },
+    },
+  },
+};
 
-The JSON object that is sent to a `Worker` via
-[`postMessage`](https://nodejs.org/api/worker_threads.html#workerpostmessagevalue-transferlist)
-is versioned using semver and schematized via JSON schema. To keep things
-easily updatable, for now see [api.mjs](./api.mjs) `const schema` to get an
-idea of what structure is mandated.
+if (isMainThread) {
+  log("Detected mainthread: Respawning extractor as worker_thread");
+  // INFO: We're launching this file as a `Worker` when the mainthread is
+  // detected as this can be useful when running it without an accompanying
+  // other process.
+  new Worker(__filename, { workerData: module.defaults.workerData });
+} else {
+  run();
+}
+```
+
+You can then execute it as follows
+
+```js
+import { once } from "events";
+import { Worker } from "worker_threads";
+
+const worker = new Worker(workerPath, {
+  workerData: {
+    queue: {
+      options: {
+        concurrent: 1,
+      },
+    },
+  },
+});
+
+const message = {
+  version: "0.0.1",
+  type: "json-rpc",
+  method: "eth_getTransactionReceipt",
+  params: [
+    "0xed14c3386aea0c5b39ffea466997ff13606eaedf03fe7f431326531f35809d1d",
+  ],
+};
+worker.postMessage(message);
+const [outcome] = await once(w, "message");
+
+if (!outcome.results) {
+  console.error(outcome.error);
+  return;
+}
+console.log(outcome.results);
+```
+
+## License
+
+GPL-3.0-only, see LICENSE file for details.
