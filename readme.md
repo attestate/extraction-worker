@@ -17,6 +17,9 @@ npm i eth-fun --no-save # to install eth-fun as a peer dependency
 
 ## Usage
 
+In general, also consider looking at the [crawler's main documentation page](https://attestate.com/crawler/main/configuration.html#configuration-file)
+to find out more about extraction-worker configuration options.
+
 If you're looking to extract a single message, use the `execute` function.
 
 ```js
