@@ -4,6 +4,7 @@ import {
   blockNumber,
   getBlockByNumber,
   getTransactionReceipt,
+  getTransactionByHash,
   getLogs,
 } from "eth-fun";
 
@@ -12,6 +13,8 @@ import { NotImplementedError } from "./errors.mjs";
 export async function translate(options, method, params) {
   if (method === "eth_getTransactionReceipt") {
     return await getTransactionReceipt(options, params[0]);
+  } else if (method === "eth_getTransactionByHash") {
+    return await getTransactionByHash(options, params[0]);
   } else if (method === "eth_getBlockByNumber") {
     // NOTE: `getBlockByNumber` expects the `blockNumber` input to be an
     // hexadecimal (`0x...`) value.
