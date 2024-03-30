@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.3
+
+- Add `getTransactionByHash` call
+
 ## 0.7.2
 
 - Add `async function execute(message, concurrency)` to allow usage of
